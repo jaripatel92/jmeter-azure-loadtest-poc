@@ -1,0 +1,25 @@
+name: Azure Load Test POC
+
+on:
+  workflow_dispatch:
+
+jobs:
+  loadtest:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Run Azure Load Test
+        run: |
+          az load test-run create \
+            --resource-group <RESOURCE_GROUP_NAME> \
+            --load-test-resource <LOAD_TEST_RESOURCE_NAME> \
+            --test-id jmeter-azure-gha-poc \
+            --test-plan jmeter/basic_smoke_test.jmx
