@@ -16,10 +16,9 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Run Azure Load Test
+      - name: Start Existing Azure Load Test
         run: |
-          az load test-run create \
-            --resource-group <RESOURCE_GROUP_NAME> \
-            --load-test-resource <LOAD_TEST_RESOURCE_NAME> \
-            --test-id jmeter-azure-gha-poc \
-            --test-plan jmeter/basic_smoke_test.jmx
+          az load test-run start \
+            --resource-group RGP-DAUXS-TerraForm-EASTUS \
+            --load-test-resource cdot-jmeter-test \
+            --test-id jmeter-gha-existing-test
