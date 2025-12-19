@@ -1,4 +1,4 @@
-name: Azure Load Test - Final POC
+name: Azure Load Test - Success POC
 
 on: [push]
 
@@ -14,19 +14,20 @@ jobs:
 
       - name: 'Update and Run Load Test'
         run: |
-          # 1. This updates the cdot-jmeter-test with your config.yaml
+          # We set the token as an environment variable to ensure all commands use it
+          export AZURE_ACCESSTOKEN="${{ secrets.AZ_TOKEN }}"
+          
+          # 1. This UPDATES the base test configuration in the portal
           az load test create \
             --test-id "smoke-test-poc" \
             --load-test-resource "cdot-jmeter-test" \
             --resource-group "RGP-DAUXS-TerraForm-EASTUS" \
-            --load-test-config-file "config.yaml" \
-            --aad-token "${{ secrets.AZ_TOKEN }}"
+            --load-test-config-file "config.yaml"
 
-          # 2. This starts the actual execution so it shows up in 'Test Runs'
+          # 2. This starts the actual RUN so it appears in 'Test Runs'
           az load test-run create \
             --test-id "smoke-test-poc" \
             --test-run-id "run-${{ github.run_number }}" \
             --load-test-resource "cdot-jmeter-test" \
             --resource-group "RGP-DAUXS-TerraForm-EASTUS" \
-            --display-name "GitHub-Automation-Success" \
-            --aad-token "${{ secrets.AZ_TOKEN }}"
+            --display-name "GitHub-Automation-Success"
