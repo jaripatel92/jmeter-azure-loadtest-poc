@@ -1,4 +1,4 @@
-name: Azure Load Test - Hello World Automation
+name: Azure Load Test - Final POC
 
 on: [push]
 
@@ -12,12 +12,21 @@ jobs:
       - name: 'Install Azure Load Extension'
         run: az extension add --name load
 
-      - name: 'Execute Load Test via Token Bypass'
+      - name: 'Update and Run Load Test'
         run: |
-          # We pass your personal token directly to the command
-          az load test-run create \
+          # 1. This updates the cdot-jmeter-test with your config.yaml
+          az load test create \
             --test-id "smoke-test-poc" \
             --load-test-resource "cdot-jmeter-test" \
             --resource-group "RGP-DAUXS-TerraForm-EASTUS" \
-            --display-name "GitHub-Automated-Run" \
+            --load-test-config-file "config.yaml" \
+            --aad-token "${{ secrets.AZ_TOKEN }}"
+
+          # 2. This starts the actual execution so it shows up in 'Test Runs'
+          az load test-run create \
+            --test-id "smoke-test-poc" \
+            --test-run-id "run-${{ github.run_number }}" \
+            --load-test-resource "cdot-jmeter-test" \
+            --resource-group "RGP-DAUXS-TerraForm-EASTUS" \
+            --display-name "GitHub-Automation-Success" \
             --aad-token "${{ secrets.AZ_TOKEN }}"
