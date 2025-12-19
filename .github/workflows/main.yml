@@ -1,33 +1,41 @@
-name: Azure Load Test - Success POC
+name: Azure Load Test - OIDC Success
 
 on: [push]
 
+permissions:
+  id-token: write  # Required for OIDC login
+  contents: read   # Required for checkout
+
 jobs:
-  run-test:
+  load-test-poc:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: 'Install Azure Load Extension'
+      - name: 'Login to Azure (OIDC Bypass)'
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: 'Install Load Extension'
         run: az extension add --name load
 
       - name: 'Update and Run Load Test'
         run: |
-          # We set the token as an environment variable to ensure all commands use it
-          export AZURE_ACCESSTOKEN="${{ secrets.AZ_TOKEN }}"
-          
-          # 1. This UPDATES the base test configuration in the portal
+          # 1. Update the Test Definition so the Portal is synced
           az load test create \
             --test-id "smoke-test-poc" \
             --load-test-resource "cdot-jmeter-test" \
             --resource-group "RGP-DAUXS-TerraForm-EASTUS" \
             --load-test-config-file "config.yaml"
 
-          # 2. This starts the actual RUN so it appears in 'Test Runs'
+          # 2. Execute the Run
           az load test-run create \
             --test-id "smoke-test-poc" \
             --test-run-id "run-${{ github.run_number }}" \
             --load-test-resource "cdot-jmeter-test" \
             --resource-group "RGP-DAUXS-TerraForm-EASTUS" \
-            --display-name "GitHub-Automation-Success"
+            --display-name "GitHub-OIDC-Run-${{ github.run_number }}"
