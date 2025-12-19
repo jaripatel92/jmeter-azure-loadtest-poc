@@ -1,4 +1,4 @@
-name: Azure Load Test - Final Success
+name: Azure Load Test - REST API Final
 
 on: [push]
 
@@ -9,33 +9,38 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: 'Install Azure Load Extension'
-        run: az extension add --name load
-
-      - name: 'Execute via Direct Token Inject'
+      - name: 'Execute via REST API'
         run: |
-          # 1. We define a temporary config directory to bypass MSAL cache checks
-          export AZURE_CONFIG_DIR=$HOME/.azure-tmp
-          mkdir -p $AZURE_CONFIG_DIR
+          # 1. Get the URI for your specific resource
+          # Resource: cdot-jmeter-test
+          # Region: eastus
+          # TestID: smoke-test-poc
           
-          # 2. We run the commands using the token directly. 
-          # Note: We must provide the resource group and resource name explicitly.
-          
-          echo "Updating test definition..."
-          az load test create \
-            --test-id "smoke-test-poc" \
-            --load-test-resource "cdot-jmeter-test" \
-            --resource-group "RGP-DAUXS-TerraForm-EASTUS" \
-            --load-test-config-file "config.yaml" \
-            --aad-token "${{ secrets.AZ_TOKEN }}" \
-            --subscription "954cd2ab-618f-4856-9db9-9de24ee78bd6"
+          URI="https://954cd2ab-618f-4856-9db9-9de24ee78bd6.eastus.cnt-prod.loadtesting.azure.com/tests/smoke-test-poc?api-version=2022-11-01"
 
-          echo "Starting test run..."
-          az load test-run create \
-            --test-id "smoke-test-poc" \
-            --test-run-id "run-${{ github.run_number }}" \
-            --load-test-resource "cdot-jmeter-test" \
-            --resource-group "RGP-DAUXS-TerraForm-EASTUS" \
-            --display-name "POC-Manual-Trigger" \
-            --aad-token "${{ secrets.AZ_TOKEN }}" \
-            --subscription "954cd2ab-618f-4856-9db9-9de24ee78bd6"
+          # 2. Send the PUT request to create/update the test
+          # This replaces the 'az load test create' command
+          echo "Updating Test Definition via REST..."
+          curl -X PUT "$URI" \
+            -H "Authorization: Bearer ${{ secrets.AZ_TOKEN }}" \
+            -H "Content-Type: application/merge-patch+json" \
+            -d '{
+              "displayName": "Smoke-Test-POC",
+              "description": "Created via GitHub REST API",
+              "loadTestConfiguration": {
+                "engineInstances": 1
+              }
+            }'
+
+          # 3. Trigger the Run
+          # This replaces the 'az load test-run create' command
+          echo "Triggering Run..."
+          RUN_URI="https://954cd2ab-618f-4856-9db9-9de24ee78bd6.eastus.cnt-prod.loadtesting.azure.com/test-runs/run-${{ github.run_number }}?api-version=2022-11-01"
+          
+          curl -X PUT "$RUN_URI" \
+            -H "Authorization: Bearer ${{ secrets.AZ_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "testId": "smoke-test-poc",
+              "displayName": "GitHub-REST-Run"
+            }'
