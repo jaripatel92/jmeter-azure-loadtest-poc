@@ -11,14 +11,14 @@ jobs:
 
       - name: 'Execute Azure Load Test POC'
         run: |
-          # 1. Variables
+          # 1. Variables - Verified IDs from your screenshots
           ENDPOINT="954cd2ab-618f-4856-9db9-9de24ee78bd6.eastus.cnt-prod.loadtesting.azure.com"
           TEST_ID="smoke-test-poc"
-          # FIXED: Added the folder path 'jmeter/' to match your repo
+          # FIXED: Path now includes the 'jmeter' folder
           FILE_PATH="jmeter/basic_smoke_test.jmx"
           FILE_NAME="basic_smoke_test.jmx"
           
-          echo "Starting POC Deployment..."
+          echo "Starting Deployment..."
 
           # 2. Update Test Definition
           echo "Step 1: Updating Test Settings..."
@@ -29,7 +29,7 @@ jobs:
               "loadTestConfiguration": { "engineInstances": 1 }
             }'
 
-          # 3. Upload the JMeter Script
+          # 3. Upload the JMeter Script (The missing link)
           echo "Step 2: Uploading JMX File from $FILE_PATH..."
           curl -X PUT "https://$ENDPOINT/tests/$TEST_ID/files/$FILE_NAME?api-version=2022-11-01" \
             -H "Authorization: Bearer ${{ secrets.AZ_TOKEN }}" \
