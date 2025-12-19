@@ -1,4 +1,4 @@
-name: Azure Load Test - Final Success
+name: Azure Load Test - Final Fix
 
 on: [push]
 
@@ -9,24 +9,26 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: 'Execute Azure Load Test'
+      - name: 'Execute via REST API'
         run: |
           ENDPOINT="954cd2ab-618f-4856-9db9-9de24ee78bd6.eastus.cnt-prod.loadtesting.azure.com"
           TEST_ID="smoke-test-poc"
           
           echo "Step 1: Uploading JMX File..."
-          # Note: We use @jmeter/ to find the file in your folder
-          curl -X PUT "https://$ENDPOINT/tests/$TEST_ID/files/basic_smoke_test.jmx?api-version=2022-11-01" \
+          # This command MUST return a 201 Created or 200 OK
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X PUT "https://$ENDPOINT/tests/$TEST_ID/files/basic_smoke_test.jmx?api-version=2022-11-01" \
             -H "Authorization: Bearer ${{ secrets.AZ_TOKEN }}" \
             -H "Content-Type: application/octet-stream" \
-            --data-binary "@jmeter/basic_smoke_test.jmx"
+            --data-binary "@jmeter/basic_smoke_test.jmx")
+          
+          echo "$RESPONSE"
 
-          echo "Step 2: Triggering Run..."
-          RUN_ID="Run-${{ github.run_number }}"
-          curl -X PUT "https://$ENDPOINT/test-runs/$RUN_ID?api-version=2022-11-01" \
+          echo "Step 2: Triggering Test Run..."
+          # This command triggers the actual execution
+          curl -s -X PUT "https://$ENDPOINT/test-runs/run-${{ github.run_number }}?api-version=2022-11-01" \
             -H "Authorization: Bearer ${{ secrets.AZ_TOKEN }}" \
             -H "Content-Type: application/json" \
             -d "{
               \"testId\": \"$TEST_ID\",
-              \"displayName\": \"$RUN_ID\"
+              \"displayName\": \"Run-${{ github.run_number }}\"
             }"
