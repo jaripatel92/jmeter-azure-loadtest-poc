@@ -1,7 +1,7 @@
 version: v0.1
-testId: jmeter-poc-test
-displayName: "JMeter POC Load Test"
-testPlan: jmeter/test.jmx  # This points to the script inside your jmeter folder
+testId: smoke-test-poc
+displayName: "Smoke Test POC"
+testPlan: jmeter/basic_smoke_test.jmx  # Matches your folder and file name
 engineInstances: 1
 failureCriteria:
   - avg(response_time_ms) > 1000
