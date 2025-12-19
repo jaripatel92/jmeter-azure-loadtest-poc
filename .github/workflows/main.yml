@@ -8,35 +8,32 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-
       - name: 'Execute via REST API'
         run: |
-          # 1. Get the URI for your specific resource
-          # Resource: cdot-jmeter-test
-          # Region: eastus
-          # TestID: smoke-test-poc
+          # 1. Base URI for your resource
+          ENDPOINT="954cd2ab-618f-4856-9db9-9de24ee78bd6.eastus.cnt-prod.loadtesting.azure.com"
           
-          URI="https://954cd2ab-618f-4856-9db9-9de24ee78bd6.eastus.cnt-prod.loadtesting.azure.com/tests/smoke-test-poc?api-version=2022-11-01"
-
-          # 2. Send the PUT request to create/update the test
-          # This replaces the 'az load test create' command
-          echo "Updating Test Definition via REST..."
-          curl -X PUT "$URI" \
+          # 2. Update Test Settings
+          echo "Updating Test Definition..."
+          curl -X PATCH "https://$ENDPOINT/tests/smoke-test-poc?api-version=2022-11-01" \
             -H "Authorization: Bearer ${{ secrets.AZ_TOKEN }}" \
             -H "Content-Type: application/merge-patch+json" \
             -d '{
               "displayName": "Smoke-Test-POC",
-              "description": "Created via GitHub REST API",
-              "loadTestConfiguration": {
-                "engineInstances": 1
-              }
+              "loadTestConfiguration": { "engineInstances": 1 }
             }'
 
-          # 3. Trigger the Run
-          # This replaces the 'az load test-run create' command
+          # 3. NEW: Upload the JMX File content
+          # This is the step that was missing!
+          echo "Uploading JMX File..."
+          curl -X PUT "https://$ENDPOINT/tests/smoke-test-poc/files/basic_smoke_test.jmx?api-version=2022-11-01" \
+            -H "Authorization: Bearer ${{ secrets.AZ_TOKEN }}" \
+            -H "Content-Type: application/octet-stream" \
+            --data-binary "@basic_smoke_test.jmx"
+
+          # 4. Trigger the Run
           echo "Triggering Run..."
-          RUN_URI="https://954cd2ab-618f-4856-9db9-9de24ee78bd6.eastus.cnt-prod.loadtesting.azure.com/test-runs/run-${{ github.run_number }}?api-version=2022-11-01"
-          
+          RUN_URI="https://$ENDPOINT/test-runs/run-${{ github.run_number }}?api-version=2022-11-01"
           curl -X PUT "$RUN_URI" \
             -H "Authorization: Bearer ${{ secrets.AZ_TOKEN }}" \
             -H "Content-Type: application/json" \
