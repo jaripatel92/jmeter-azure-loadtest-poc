@@ -1,4 +1,4 @@
-name: Azure Load Test - Permanent Login Fix
+name: Azure Load Test - Manual Token Fix
 
 on: [push]
 
@@ -9,32 +9,24 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # Uses your existing secret from chrome_rkCPRw2hnf.png
-      - name: Login to Azure
-        uses: azure/login@v2
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-      - name: 'Execute Azure Load Test'
+      - name: 'Execute via REST API'
         run: |
           ENDPOINT="954cd2ab-618f-4856-9db9-9de24ee78bd6.eastus.cnt-prod.loadtesting.azure.com"
           TEST_ID="smoke-test-poc"
+          TOKEN="${{ secrets.AZ_TOKEN }}"
           
-          # This generates a fresh token automatically so it never expires
-          FRESH_TOKEN=$(az account get-access-token --query accessToken -o tsv)
-
           echo "Step 1: Uploading JMX File..."
+          # We use the -H "Authorization: Bearer $TOKEN" format strictly
           curl -X PUT "https://$ENDPOINT/tests/$TEST_ID/files/basic_smoke_test.jmx?api-version=2022-11-01" \
-            -H "Authorization: Bearer $FRESH_TOKEN" \
+            -H "Authorization: Bearer $TOKEN" \
             -H "Content-Type: application/octet-stream" \
             --data-binary "@jmeter/basic_smoke_test.jmx"
 
-          echo "Step 2: Triggering Execution..."
-          RUN_ID="Run-${{ github.run_number }}"
-          curl -X PUT "https://$ENDPOINT/test-runs/$RUN_ID?api-version=2022-11-01" \
-            -H "Authorization: Bearer $FRESH_TOKEN" \
+          echo "Step 2: Triggering Test Run..."
+          curl -X PUT "https://$ENDPOINT/test-runs/run-${{ github.run_number }}?api-version=2022-11-01" \
+            -H "Authorization: Bearer $TOKEN" \
             -H "Content-Type: application/json" \
             -d "{
               \"testId\": \"$TEST_ID\",
-              \"displayName\": \"$RUN_ID\"
+              \"displayName\": \"Run-${{ github.run_number }}\"
             }"
