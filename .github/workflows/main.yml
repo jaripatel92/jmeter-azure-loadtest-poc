@@ -1,4 +1,4 @@
-name: Azure Load Test - Official Fix
+name: Azure Load Test - Manual Token Success
 
 on: [push]
 
@@ -9,17 +9,16 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # Use the specialized Azure Load Test action
+      # This step bypasses the 'az login' error by manually setting the token
       - name: 'Azure Load Testing'
         uses: azure/load-testing@v1.1.25
         with:
-          # This is your unique resource ID from your screenshots
-          loadTestResource: 'cdot-jmeter-test'
-          loadTestResourceGroup: 'CIPSandbox-rg'
-          # Use your refreshed token here
-          loadTestAccessToken: ${{ secrets.AZ_TOKEN }}
-          # Direct path to your script
-          loadTestConfigProp: |
-            testId: smoke-test-poc
-            testPlan: jmeter/basic_smoke_test.jmx
-            engineInstances: 1
+          loadtestResource: 'cdot-jmeter-test'
+          resourceGroup: 'CIPSandbox-rg'
+          # We pass the token directly into the action's environment
+        env:
+          AZURE_ACCESSTOKEN: ${{ secrets.AZ_TOKEN }}
+        with:
+          # Fixed casing for all inputs
+          loadtestConfigFile: 'jmeter/basic_smoke_test.jmx'
+          loadtestRunName: 'GitHub-Run-${{ github.run_number }}'
