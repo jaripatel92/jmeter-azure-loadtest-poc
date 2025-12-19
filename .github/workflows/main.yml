@@ -17,5 +17,5 @@ jobs:
         uses: azure/load-testing@v1
         with:
           loadTestConfigFile: 'config.yaml'
-          loadTestResource: 'YOUR_RESOURCE_NAME' # The name of your Azure Load Testing resource
-          resourceGroup: 'YOUR_RESOURCE_GROUP'   # The name of your Azure Resource Group
+          loadTestResource: 'cdot-jmeter-test'
+          resourceGroup: 'RGP-DAUXS-TerraForm-EASTUS'
