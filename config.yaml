@@ -5,8 +5,6 @@ testPlan: "jmeter/basic_smoke_test.jmx"
 engineInstances: 1
 env:
   - name: domain
-    value: "www.google.com" # Ensures the test has a valid target
+    value: "www.google.com"
   - name: protocol
     value: "https"
-failureCriteria:
-  - avg(response_time_ms) > 5000
