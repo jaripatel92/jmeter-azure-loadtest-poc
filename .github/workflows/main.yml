@@ -1,4 +1,4 @@
-name: Azure Load Test - Final Success
+name: Azure Load Test - Final POC Success
 
 on: [push]
 
@@ -12,38 +12,25 @@ jobs:
       - name: 'Install Azure Load Extension'
         run: az extension add --name load
 
-      - name: 'Force Execute using Token'
+      - name: 'Direct Token Login & Execute'
         run: |
-          # 1. Create a compliant login profile to satisfy the 'environmentName' check
-          mkdir -p ~/.azure
-          echo '{
-            "subscriptions": [
-              {
-                "id": "954cd2ab-618f-4856-9db9-9de24ee78bd6",
-                "name": "POC-Sub",
-                "state": "Enabled",
-                "tenantId": "96308ce0-60bf-4116-8e00-9dd247979e54",
-                "isDefault": true,
-                "environmentName": "AzureCloud",
-                "user": {
-                  "name": "Jayraj",
-                  "type": "user"
-                }
-              }
-            ]
-          }' > ~/.azure/azureProfile.json
-          
-          # 2. Set the token for authorization
-          export AZURE_ACCESSTOKEN="${{ secrets.AZ_TOKEN }}"
-          
-          # 3. Execute the commands with direct subscription targeting
+          # 1. Officially 'Login' to satisfy MSAL using your token as the secret
+          # Use your App ID from step 1 and the AZ_TOKEN from secrets
+          az login --service-principal \
+            -u "c2608aed-0ff3-4250-9730-d629b31fa17d" \
+            -p "${{ secrets.AZ_TOKEN }}" \
+            --tenant "96308ce0-60bf-4116-8e00-9dd247979e54"
+
+          # 2. Target your subscription
+          az account set --subscription "954cd2ab-618f-4856-9db9-9de24ee78bd6"
+
+          # 3. Sync and Execute
           echo "Updating test definition..."
           az load test create \
             --test-id "smoke-test-poc" \
             --load-test-resource "cdot-jmeter-test" \
             --resource-group "RGP-DAUXS-TerraForm-EASTUS" \
-            --load-test-config-file "config.yaml" \
-            --subscription "954cd2ab-618f-4856-9db9-9de24ee78bd6"
+            --load-test-config-file "config.yaml"
 
           echo "Starting test run..."
           az load test-run create \
@@ -51,5 +38,4 @@ jobs:
             --test-run-id "run-${{ github.run_number }}" \
             --load-test-resource "cdot-jmeter-test" \
             --resource-group "RGP-DAUXS-TerraForm-EASTUS" \
-            --display-name "POC-Manual-Trigger" \
-            --subscription "954cd2ab-618f-4856-9db9-9de24ee78bd6"
+            --display-name "POC-Manual-Trigger"
