@@ -1,4 +1,4 @@
-name: Azure Load Test - Final POC Victory
+name: Azure Load Test - Final Success
 
 on: [push]
 
@@ -14,14 +14,29 @@ jobs:
 
       - name: 'Force Execute using Token'
         run: |
-          # 1. Create a fake login profile so the CLI thinks it's logged in
+          # 1. Create a compliant login profile to satisfy the 'environmentName' check
           mkdir -p ~/.azure
-          echo '{"subscriptions": [{"id": "954cd2ab-618f-4856-9db9-9de24ee78bd6", "name": "POC-Sub", "state": "Enabled", "user": {"name": "Jayraj", "type": "user"}, "tenantId": "96308ce0-60bf-4116-8e00-9dd247979e54", "isDefault": true}]}' > ~/.azure/azureProfile.json
+          echo '{
+            "subscriptions": [
+              {
+                "id": "954cd2ab-618f-4856-9db9-9de24ee78bd6",
+                "name": "POC-Sub",
+                "state": "Enabled",
+                "tenantId": "96308ce0-60bf-4116-8e00-9dd247979e54",
+                "isDefault": true,
+                "environmentName": "AzureCloud",
+                "user": {
+                  "name": "Jayraj",
+                  "type": "user"
+                }
+              }
+            ]
+          }' > ~/.azure/azureProfile.json
           
-          # 2. Set the token as a variable that the CLI core recognizes
+          # 2. Set the token for authorization
           export AZURE_ACCESSTOKEN="${{ secrets.AZ_TOKEN }}"
           
-          # 3. Run the commands - Adding --subscription to keep it on track
+          # 3. Execute the commands with direct subscription targeting
           echo "Updating test definition..."
           az load test create \
             --test-id "smoke-test-poc" \
