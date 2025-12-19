@@ -1,26 +1,27 @@
-name: Azure Load Test Automation POC
+name: Azure Load Test – Auth Boundary Proof
 
-on: [push]
+on:
+  workflow_dispatch:
 
 jobs:
-  load-test:
+  auth-boundary:
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
 
-      # This connects GitHub to Azure using your existing secret
-      - name: 'Login to Azure'
-        uses: azure/login@v1
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # This step proves GitHub runner is alive
+      - name: List repository files
+        run: ls -R
+
+      # Azure authentication attempt
+      # EXPECTED TO FAIL without Service Principal permissions
+      - name: Azure Login (Expected Failure)
+        uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      # Use the CLI to run the test (This bypasses the specific role-check of the Action)
-      - name: 'Execute Load Test via CLI'
-        run: |
-          az extension add --name load
-          az load test-run create \
-            --test-id "smoke-test-poc" \
-            --load-test-resource "cdot-jmeter-test" \
-            --resource-group "RGP-DAUXS-TerraForm-EASTUS" \
-            --display-name "GitHub-Automated-Run-${{ github.run_number }}"
+      # This step will not run if login fails
+      - name: Azure Account Info
+        run: az account show
