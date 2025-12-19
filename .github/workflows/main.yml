@@ -1,4 +1,4 @@
-name: Azure Load Test - Manual Bypass POC
+name: Azure Load Test - Final POC Success
 
 on: [push]
 
@@ -9,25 +9,25 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: 'Install Load Extension'
+      - name: 'Install Azure Load Extension'
         run: az extension add --name load
 
-      - name: 'Execute via Token Bypass'
+      - name: 'Sync and Execute Load Test'
         run: |
-          # We use your personal token as an environment variable
+          # The Azure CLI automatically looks for this variable to authorize
           export AZURE_ACCESSTOKEN="${{ secrets.AZ_TOKEN }}"
           
-          # 1. This updates the cdot-jmeter-test resource
+          # 1. This UPDATES the 'Tests' tab in your Portal
           az load test create \
             --test-id "smoke-test-poc" \
             --load-test-resource "cdot-jmeter-test" \
             --resource-group "RGP-DAUXS-TerraForm-EASTUS" \
             --load-test-config-file "config.yaml"
 
-          # 2. This starts the run so it appears in 'Test Runs'
+          # 2. This creates the 'Test Run' instance
           az load test-run create \
             --test-id "smoke-test-poc" \
             --test-run-id "run-${{ github.run_number }}" \
             --load-test-resource "cdot-jmeter-test" \
             --resource-group "RGP-DAUXS-TerraForm-EASTUS" \
-            --display-name "GitHub-Bypass-Run"
+            --display-name "GitHub-Automation-Success"
