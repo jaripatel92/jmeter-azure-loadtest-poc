@@ -1,15 +1,12 @@
 version: v0.1
-testId: smoke-test-poc
+testId: "smoke-test-poc"
 displayName: "Smoke Test POC"
-testPlan: jmeter/basic_smoke_test.jmx
+testPlan: "jmeter/basic_smoke_test.jmx"
 engineInstances: 1
-configurationFiles: []
 env:
   - name: domain
-    value: "www.google.com" # The "Hello World" target
+    value: "www.google.com" # Ensures the test has a valid target
   - name: protocol
     value: "https"
-  - name: path
-    value: "/"
 failureCriteria:
   - avg(response_time_ms) > 5000
