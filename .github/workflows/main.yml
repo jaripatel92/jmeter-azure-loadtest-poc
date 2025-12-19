@@ -1,37 +1,43 @@
-name: Azure Load Test - Working POC
+name: Azure Load Test – Working End-to-End
 
 on:
   workflow_dispatch:
 
 jobs:
-  run-test:
+  load-test:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Execute Azure Load Test via REST
+      - name: Azure Load Test via REST API
         shell: bash
         env:
-          ENDPOINT: "${{ secrets.AZURE_SUBSCRIPTION_ID }}.eastus.cnt-prod.loadtesting.azure.com"
-          TOKEN: "${{ secrets.AZURE_BEARER_TOKEN }}"
-          TEST_ID: "${{ secrets.AZURE_TEST_ID }}"
+          SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          REGION: eastus
+          TEST_ID: ${{ vars.AZURE_TEST_ID }}
+          TOKEN: ${{ secrets.AZ_TOKEN }}
         run: |
           set -euo pipefail
-          echo "Uploading JMX to Azure Load Testing..."
 
-          curl -sS -o upload_resp.json -w "%{http_code}" \
-            -X PUT "https://${ENDPOINT}/tests/${TEST_ID}/files/basic_smoke_test.jmx?api-version=2022-11-01" \
+          ENDPOINT="${SUBSCRIPTION_ID}.${REGION}.cnt-prod.loadtesting.azure.com"
+          RUN_ID="run-${GITHUB_RUN_NUMBER}"
+
+          echo "Using endpoint: $ENDPOINT"
+
+          echo "Uploading JMX..."
+          curl -f -X PUT \
+            "https://${ENDPOINT}/tests/${TEST_ID}/files/basic_smoke_test.jmx?api-version=2022-11-01" \
             -H "Authorization: Bearer ${TOKEN}" \
             -H "Content-Type: application/octet-stream" \
             --data-binary "@jmeter/basic_smoke_test.jmx"
 
-          echo "Triggering new run..."
-          RUN_ID="run-${GITHUB_RUN_NUMBER}"
-          curl -sS -o run_resp.json -w "%{http_code}" \
-            -X PATCH "https://${ENDPOINT}/test-runs/${RUN_ID}?api-version=2022-11-01" \
+          echo "Starting test run..."
+          curl -f -X PATCH \
+            "https://${ENDPOINT}/test-runs/${RUN_ID}?api-version=2022-11-01" \
             -H "Authorization: Bearer ${TOKEN}" \
             -H "Content-Type: application/merge-patch+json" \
             -d "{\"testId\":\"${TEST_ID}\",\"displayName\":\"${RUN_ID}\"}"
 
-          echo "Run triggered successfully! See Azure portal for Test ID=${TEST_ID}, Run ID=${RUN_ID}."
+          echo "✅ Load test started: ${RUN_ID}"
