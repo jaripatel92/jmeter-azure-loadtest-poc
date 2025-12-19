@@ -1,34 +1,25 @@
-name: Azure Load Test - Final Fix
+name: Azure Load Test - Official Fix
 
 on: [push]
 
 jobs:
-  run-test:
+  load-test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: 'Execute via REST API'
-        run: |
-          ENDPOINT="954cd2ab-618f-4856-9db9-9de24ee78bd6.eastus.cnt-prod.loadtesting.azure.com"
-          TEST_ID="smoke-test-poc"
-          
-          echo "Step 1: Uploading JMX File..."
-          # This command MUST return a 201 Created or 200 OK
-          RESPONSE=$(curl -s -w "\n%{http_code}" -X PUT "https://$ENDPOINT/tests/$TEST_ID/files/basic_smoke_test.jmx?api-version=2022-11-01" \
-            -H "Authorization: Bearer ${{ secrets.AZ_TOKEN }}" \
-            -H "Content-Type: application/octet-stream" \
-            --data-binary "@jmeter/basic_smoke_test.jmx")
-          
-          echo "$RESPONSE"
-
-          echo "Step 2: Triggering Test Run..."
-          # This command triggers the actual execution
-          curl -s -X PUT "https://$ENDPOINT/test-runs/run-${{ github.run_number }}?api-version=2022-11-01" \
-            -H "Authorization: Bearer ${{ secrets.AZ_TOKEN }}" \
-            -H "Content-Type: application/json" \
-            -d "{
-              \"testId\": \"$TEST_ID\",
-              \"displayName\": \"Run-${{ github.run_number }}\"
-            }"
+      # Use the specialized Azure Load Test action
+      - name: 'Azure Load Testing'
+        uses: azure/load-testing@v1.1.25
+        with:
+          # This is your unique resource ID from your screenshots
+          loadTestResource: 'cdot-jmeter-test'
+          loadTestResourceGroup: 'CIPSandbox-rg'
+          # Use your refreshed token here
+          loadTestAccessToken: ${{ secrets.AZ_TOKEN }}
+          # Direct path to your script
+          loadTestConfigProp: |
+            testId: smoke-test-poc
+            testPlan: jmeter/basic_smoke_test.jmx
+            engineInstances: 1
