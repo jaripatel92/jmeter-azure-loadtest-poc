@@ -1,0 +1,7 @@
+version: v0.1
+testId: jmeter-poc-test
+displayName: "JMeter POC Load Test"
+testPlan: jmeter/test.jmx  # This points to the script inside your jmeter folder
+engineInstances: 1
+failureCriteria:
+  - avg(response_time_ms) > 1000
