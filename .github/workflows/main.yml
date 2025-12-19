@@ -1,24 +1,40 @@
-name: Azure Load Test - Manual Token Success
+name: Azure Load Test - Permanent Login Fix
 
 on: [push]
 
 jobs:
-  load-test:
+  run-test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # This step bypasses the 'az login' error by manually setting the token
-      - name: 'Azure Load Testing'
-        uses: azure/load-testing@v1.1.25
+      # Uses your existing secret from chrome_rkCPRw2hnf.png
+      - name: Login to Azure
+        uses: azure/login@v2
         with:
-          loadtestResource: 'cdot-jmeter-test'
-          resourceGroup: 'CIPSandbox-rg'
-          # We pass the token directly into the action's environment
-        env:
-          AZURE_ACCESSTOKEN: ${{ secrets.AZ_TOKEN }}
-        with:
-          # Fixed casing for all inputs
-          loadtestConfigFile: 'jmeter/basic_smoke_test.jmx'
-          loadtestRunName: 'GitHub-Run-${{ github.run_number }}'
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: 'Execute Azure Load Test'
+        run: |
+          ENDPOINT="954cd2ab-618f-4856-9db9-9de24ee78bd6.eastus.cnt-prod.loadtesting.azure.com"
+          TEST_ID="smoke-test-poc"
+          
+          # This generates a fresh token automatically so it never expires
+          FRESH_TOKEN=$(az account get-access-token --query accessToken -o tsv)
+
+          echo "Step 1: Uploading JMX File..."
+          curl -X PUT "https://$ENDPOINT/tests/$TEST_ID/files/basic_smoke_test.jmx?api-version=2022-11-01" \
+            -H "Authorization: Bearer $FRESH_TOKEN" \
+            -H "Content-Type: application/octet-stream" \
+            --data-binary "@jmeter/basic_smoke_test.jmx"
+
+          echo "Step 2: Triggering Execution..."
+          RUN_ID="Run-${{ github.run_number }}"
+          curl -X PUT "https://$ENDPOINT/test-runs/$RUN_ID?api-version=2022-11-01" \
+            -H "Authorization: Bearer $FRESH_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"testId\": \"$TEST_ID\",
+              \"displayName\": \"$RUN_ID\"
+            }"
