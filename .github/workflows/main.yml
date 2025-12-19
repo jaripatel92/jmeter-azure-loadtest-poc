@@ -1,4 +1,4 @@
-name: Azure Load Test - Final POC Success
+name: Azure Load Test - Final Success
 
 on: [push]
 
@@ -12,25 +12,23 @@ jobs:
       - name: 'Install Azure Load Extension'
         run: az extension add --name load
 
-      - name: 'Direct Token Login & Execute'
+      - name: 'Execute via Direct Token Inject'
         run: |
-          # 1. Officially 'Login' to satisfy MSAL using your token as the secret
-          # Use your App ID from step 1 and the AZ_TOKEN from secrets
-          az login --service-principal \
-            -u "c2608aed-0ff3-4250-9730-d629b31fa17d" \
-            -p "${{ secrets.AZ_TOKEN }}" \
-            --tenant "96308ce0-60bf-4116-8e00-9dd247979e54"
-
-          # 2. Target your subscription
-          az account set --subscription "954cd2ab-618f-4856-9db9-9de24ee78bd6"
-
-          # 3. Sync and Execute
+          # 1. We define a temporary config directory to bypass MSAL cache checks
+          export AZURE_CONFIG_DIR=$HOME/.azure-tmp
+          mkdir -p $AZURE_CONFIG_DIR
+          
+          # 2. We run the commands using the token directly. 
+          # Note: We must provide the resource group and resource name explicitly.
+          
           echo "Updating test definition..."
           az load test create \
             --test-id "smoke-test-poc" \
             --load-test-resource "cdot-jmeter-test" \
             --resource-group "RGP-DAUXS-TerraForm-EASTUS" \
-            --load-test-config-file "config.yaml"
+            --load-test-config-file "config.yaml" \
+            --aad-token "${{ secrets.AZ_TOKEN }}" \
+            --subscription "954cd2ab-618f-4856-9db9-9de24ee78bd6"
 
           echo "Starting test run..."
           az load test-run create \
@@ -38,4 +36,6 @@ jobs:
             --test-run-id "run-${{ github.run_number }}" \
             --load-test-resource "cdot-jmeter-test" \
             --resource-group "RGP-DAUXS-TerraForm-EASTUS" \
-            --display-name "POC-Manual-Trigger"
+            --display-name "POC-Manual-Trigger" \
+            --aad-token "${{ secrets.AZ_TOKEN }}" \
+            --subscription "954cd2ab-618f-4856-9db9-9de24ee78bd6"
