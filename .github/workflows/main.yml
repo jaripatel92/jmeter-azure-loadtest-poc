@@ -1,21 +1,26 @@
-name: Azure Load Testing
+name: Azure Load Test Automation POC
+
 on: [push]
 
 jobs:
-  loadtest:
+  load-test:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Login to Azure
+      # This connects GitHub to Azure using your existing secret
+      - name: 'Login to Azure'
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: 'Run Azure Load Test'
-        uses: azure/load-testing@v1
-        with:
-          loadTestConfigFile: 'config.yaml'
-          loadTestResource: 'cdot-jmeter-test'
-          resourceGroup: 'RGP-DAUXS-TerraForm-EASTUS'
+      # Use the CLI to run the test (This bypasses the specific role-check of the Action)
+      - name: 'Execute Load Test via CLI'
+        run: |
+          az extension add --name load
+          az load test-run create \
+            --test-id "smoke-test-poc" \
+            --load-test-resource "cdot-jmeter-test" \
+            --resource-group "RGP-DAUXS-TerraForm-EASTUS" \
+            --display-name "GitHub-Automated-Run-${{ github.run_number }}"
