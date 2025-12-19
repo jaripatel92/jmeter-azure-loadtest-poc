@@ -1,4 +1,4 @@
-name: Azure Load Test - Force Success
+name: Azure Load Test - Final Success
 
 on: [push]
 
@@ -12,15 +12,13 @@ jobs:
       - name: 'Install Azure Load Extension'
         run: az extension add --name load
 
-      - name: 'Sync and Execute Load Test'
+      - name: 'Execute Load Test'
         run: |
-          # 1. We manually create a "dummy" login state so the CLI doesn't error out
-          # This creates the necessary folder structure the CLI expects
-          mkdir -p ~/.azure
-          echo '{"subscriptions": []}' > ~/.azure/azureProfile.json
-
-          # 2. We use the --aad-token flag DIRECTLY in the command. 
-          # This is the most "aggressive" way to pass the token.
+          # 1. Provide the token via the official ENV variable the CLI core uses
+          export AZURE_ACCESSTOKEN="${{ secrets.AZ_TOKEN }}"
+          
+          # 2. Tell the CLI to ignore the local 'login' check and use the token above
+          # We use --subscription directly to ensure it targets the right one
           
           echo "Syncing test definition..."
           az load test create \
@@ -28,7 +26,7 @@ jobs:
             --load-test-resource "cdot-jmeter-test" \
             --resource-group "RGP-DAUXS-TerraForm-EASTUS" \
             --load-test-config-file "config.yaml" \
-            --aad-token "${{ secrets.AZ_TOKEN }}"
+            --subscription "954cd2ab-618f-4856-9db9-9de24ee78bd6"
 
           echo "Starting test run..."
           az load test-run create \
@@ -37,4 +35,4 @@ jobs:
             --load-test-resource "cdot-jmeter-test" \
             --resource-group "RGP-DAUXS-TerraForm-EASTUS" \
             --display-name "GitHub-Success-Run" \
-            --aad-token "${{ secrets.AZ_TOKEN }}"
+            --subscription "954cd2ab-618f-4856-9db9-9de24ee78bd6"
