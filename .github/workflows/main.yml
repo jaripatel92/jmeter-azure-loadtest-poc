@@ -1,30 +1,23 @@
-name: Azure Load Test Automation
+name: Azure Load Test - Hello World Automation
 
 on: [push]
 
-permissions:
-  id-token: write
-  contents: read
-
 jobs:
-  load-test:
+  run-test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: 'Login to Azure (OIDC)'
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ vars.AZURE_TENANT_ID }}
-          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: 'Install Azure Load Extension'
+        run: az extension add --name load
 
-      - name: 'Run Hello World Load Test'
+      - name: 'Execute Load Test via Token Bypass'
         run: |
-          az extension add --name load
+          # We pass your personal token directly to the command
           az load test-run create \
             --test-id "smoke-test-poc" \
-            --load-test-resource "${{ vars.LOAD_TEST_RESOURCE }}" \
-            --resource-group "${{ vars.AZURE_RESOURCE_GROUP }}" \
-            --display-name "GitHub-Run-${{ github.run_number }}"
+            --load-test-resource "cdot-jmeter-test" \
+            --resource-group "RGP-DAUXS-TerraForm-EASTUS" \
+            --display-name "GitHub-Automated-Run" \
+            --aad-token "${{ secrets.AZ_TOKEN }}"
