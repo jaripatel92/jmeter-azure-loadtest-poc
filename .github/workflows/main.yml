@@ -1,4 +1,4 @@
-name: Azure Load Test - REST API Final
+name: Azure Load Test - Final Success
 
 on: [push]
 
@@ -8,36 +8,45 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-      - name: 'Execute via REST API'
+
+      - name: 'Execute Azure Load Test POC'
         run: |
-          # 1. Base URI for your resource
+          # 1. Variables - Ensuring all IDs match your environment
           ENDPOINT="954cd2ab-618f-4856-9db9-9de24ee78bd6.eastus.cnt-prod.loadtesting.azure.com"
+          TEST_ID="smoke-test-poc"
+          FILE_NAME="basic_smoke_test.jmx"
           
-          # 2. Update Test Settings
-          echo "Updating Test Definition..."
-          curl -X PATCH "https://$ENDPOINT/tests/smoke-test-poc?api-version=2022-11-01" \
+          echo "Starting POC Deployment for Test: $TEST_ID"
+
+          # 2. Update/Create Test Definition (Settings)
+          echo "Step 1: Updating Test Settings..."
+          curl -X PATCH "https://$ENDPOINT/tests/$TEST_ID?api-version=2022-11-01" \
             -H "Authorization: Bearer ${{ secrets.AZ_TOKEN }}" \
             -H "Content-Type: application/merge-patch+json" \
             -d '{
               "displayName": "Smoke-Test-POC",
-              "loadTestConfiguration": { "engineInstances": 1 }
+              "description": "Triggered via GitHub REST API",
+              "loadTestConfiguration": {
+                "engineInstances": 1
+              }
             }'
 
-          # 3. NEW: Upload the JMX File content
-          # This is the step that was missing!
-          echo "Uploading JMX File..."
-          curl -X PUT "https://$ENDPOINT/tests/smoke-test-poc/files/basic_smoke_test.jmx?api-version=2022-11-01" \
+          # 3. Upload the JMeter Script (The "Brain" of the test)
+          echo "Step 2: Uploading JMX File ($FILE_NAME)..."
+          curl -X PUT "https://$ENDPOINT/tests/$TEST_ID/files/$FILE_NAME?api-version=2022-11-01" \
             -H "Authorization: Bearer ${{ secrets.AZ_TOKEN }}" \
             -H "Content-Type: application/octet-stream" \
-            --data-binary "@basic_smoke_test.jmx"
+            --data-binary "@$FILE_NAME"
 
-          # 4. Trigger the Run
-          echo "Triggering Run..."
-          RUN_URI="https://$ENDPOINT/test-runs/run-${{ github.run_number }}?api-version=2022-11-01"
-          curl -X PUT "$RUN_URI" \
+          # 4. Trigger the actual Test Run
+          echo "Step 3: Triggering Execution..."
+          RUN_ID="run-${{ github.run_number }}"
+          curl -X PUT "https://$ENDPOINT/test-runs/$RUN_ID?api-version=2022-11-01" \
             -H "Authorization: Bearer ${{ secrets.AZ_TOKEN }}" \
             -H "Content-Type: application/json" \
-            -d '{
-              "testId": "smoke-test-poc",
-              "displayName": "GitHub-REST-Run"
-            }'
+            -d "{
+              \"testId\": \"$TEST_ID\",
+              \"displayName\": \"GitHub-Run-${{ github.run_number }}\"
+            }"
+            
+          echo "Workflow complete. Check Azure Portal for Run ID: $RUN_ID"
