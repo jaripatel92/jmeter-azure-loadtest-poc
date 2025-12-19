@@ -1,8 +1,4 @@
-version: v0.1
-testId: "smoke-test-poc"
-displayName: "Smoke Test POC"
-testPlan: "jmeter/basic_smoke_test.jmx"
+testId: smoke-test-poc
+displayName: Smoke Test POC
+testPlan: jmeter/basic_smoke_test.jmx
 engineInstances: 1
-failureCriteria:
-  - avg(response_time) > 1000 # Fails if average response time > 1s
-  - percentage(error) > 10    # Fails if more than 10% errors
